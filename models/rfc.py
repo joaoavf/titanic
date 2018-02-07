@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from sklearn import svm
+from sklearn.ensemble import RandomForestClassifier
 from models.util import *
 import src.data.make_dataset as mkds
 
@@ -8,7 +8,7 @@ def predict(df=get_processed_data(), results_column='Survived'):
     y = df[results_column]
     X = df.drop(columns=results_column)
 
-    clf = svm.SVC()
+    clf = RandomForestClassifier(n_estimators=1000)
 
     clf.fit(X, y)
 
@@ -22,5 +22,5 @@ def predict(df=get_processed_data(), results_column='Survived'):
 
     test = test[['PassengerId', 'Survived']]
 
-    # TODO decide where is the best path to save
-    test.to_csv('svm-predictions.csv', index=False)
+    # TODO decide which is the best path to save
+    test.to_csv('rfc-predictions.csv', index=False)

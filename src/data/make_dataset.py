@@ -4,6 +4,7 @@ import click
 import logging
 from dotenv import find_dotenv, load_dotenv
 import pandas as pd
+from sklearn.preprocessing import LabelEncoder
 
 
 @click.command()
@@ -47,6 +48,11 @@ def get_data_path():
     return final_path
 
 
+def sex_to_int(df):
+    df['Sex'] = df['Sex'].replace({'male': 0, 'female': 1})
+    return df
+
+
 def add_title(df, merge_small_sample=True):
     """
     Add Title to DataFrame (Mr., Miss., etc)
@@ -77,6 +83,13 @@ def merge_title_small_sample(df_line, small_sample_series):
         return 'Other'
     else:
         return df_line['Title']
+
+
+def one_hot_encoder_title(df):
+    encoder = LabelEncoder()
+    title_cat = df["Title"]
+    df["Title"] = encoder.fit_transform(title_cat)
+    return df
 
 
 def add_infant_status(df):
@@ -136,6 +149,12 @@ def add_infant_status(df):
     return df
 
 
+def clean_df(df):
+    df = df.fillna(df.mean())
+    df = df.select_dtypes(exclude=['object'])
+    return df
+
+
 if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_fmt)
@@ -150,7 +169,13 @@ if __name__ == '__main__':
     # main()
 
     df = load_df()
+
     df = add_title(df)
+    df = one_hot_encoder_title(df)
     df = add_infant_status(df)
+    df = sex_to_int(df)
+    df = clean_df(df)
 
     save_df(df)
+
+    print(df.dtypes)

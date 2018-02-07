@@ -5,6 +5,7 @@ import logging
 from dotenv import find_dotenv, load_dotenv
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import OneHotEncoder
 
 
 @click.command()
@@ -88,8 +89,21 @@ def merge_title_small_sample(df_line, small_sample_series):
 def one_hot_encoder_title(df):
     encoder = LabelEncoder()
     title_cat = df["Title"]
-    df["Title"] = encoder.fit_transform(title_cat)
+    df['Title'] = encoder.fit_transform(title_cat)
+
     return df
+
+    """
+    onehotencoder = OneHotEncoder()
+    housing_cat_onehot = onehotencoder.fit_transform(title_cat_encoded.reshape(-1, 1))
+    # TODO check if column names is right
+    onehot_df = pd.DataFrame(housing_cat_onehot, index=df.index, columns=df["Title"].value_counts().index)
+
+    df.drop(columns=['Title'])
+    ndf = pd.concat([df, onehot_df])
+    
+
+    return ndf"""
 
 
 def add_infant_status(df):
@@ -99,6 +113,11 @@ def add_infant_status(df):
         :param df: Input Titanic DataFrame (with Name column)
         :return: df with [['Male Infant','Female Infant']]
         """
+    if 'Survived' not in df.columns:
+        df['Male Infant'] = df['Age'] < 12
+        df['Female Infant'] = df['Age'] < 63
+        return df
+
     # Get Maximum age to max out for loop
     max_age = df['Age'].max()
 
@@ -154,6 +173,13 @@ def clean_df(df):
     df = df.select_dtypes(exclude=['object'])
     return df
 
+def routine(df):
+    df = add_infant_status(df)
+    df = sex_to_int(df)
+    df = add_title(df)
+    df = one_hot_encoder_title(df)
+    df = clean_df(df)
+    return df
 
 if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -170,11 +196,7 @@ if __name__ == '__main__':
 
     df = load_df()
 
-    df = add_title(df)
-    df = one_hot_encoder_title(df)
-    df = add_infant_status(df)
-    df = sex_to_int(df)
-    df = clean_df(df)
+    df = routine(df)
 
     save_df(df)
 

@@ -71,12 +71,26 @@ def sex_to_int(df):
     return df
 
 
-def embarked_to_int(df):
-    df.Embarked.fillna('NaN')
-    embarked_encoded = pd.Categorical(df.Embarked, ['NaN', 'S', 'C', 'Q']).codes
-    embarked_df = pd.get_dummies(embarked_encoded)
-    embarked_df.columns = ['NaN', 'S', 'C', 'Q']
+def embarked_onehot(df):
+    """
+    Transforms embarked into OneHotEncoder columns.
+
+    :param df: Input DataFrame that contains 'Embarked' column
+
+    :return: df
+    :rtype: pandas DataFrame
+    """
+
+    # TODO make it foolproof if number of categories in train is different from test and etc
+    # TODO better treat NaNs
+
+    # Does basically the same thing as OneHotEncoder
+    embarked_df = pd.get_dummies(df.Embarked)
+
+    # Merges DataFrames (OneHotEncoder and DataFrame being processed)
     ndf = pd.concat([df, embarked_df], axis=1)
+
+    # Returns transformed DataFrame
     return ndf
 
 
@@ -175,6 +189,9 @@ def clean_df(df):
     # Remove String dtypes
     df = df.select_dtypes(exclude=['object'])
 
+    # Passenger Id doesn't seem like noise, I tried to remove it, but it actually worsened my prediction
+    # df.drop(columns='PassengerId', inplace=True)
+
     # Returns clean DF
     return df
 
@@ -191,7 +208,7 @@ def routine(df):
     df = sex_to_int(df)
     df = add_title(df)
     df = one_hot_encoder_title(df)
-    df = embarked_to_int(df)
+    df = embarked_onehot(df)
 
     # Clean DF, remove object columns and FillNA
     df = clean_df(df)

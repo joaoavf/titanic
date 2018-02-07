@@ -42,3 +42,5 @@ def predict(df=get_processed_data(), results_column='Survived'):
     # TODO decide which is the best path to save
     # Saves to csv to disk
     test.to_csv('rfc-predictions.csv', index=False)
+
+    print(pd.DataFrame(clf.feature_importances_, index=W.columns))

@@ -2,10 +2,8 @@
 import os
 import click
 import logging
-from dotenv import find_dotenv, load_dotenv
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import OneHotEncoder
 
 
 @click.command()
@@ -21,11 +19,21 @@ def main(input_filepath='x', output_filepath='y'):
 
 
 def load_df():
+    """
+    Loads train_df
+    :return: Train DataFrame
+    :rtype: pandas DataFrame
+    """
     final_path = os.path.join(get_data_path(), 'raw/train.csv')
     return pd.read_csv(final_path)
 
 
 def save_df(df):
+    """
+    Saves DataFrame in hdf5 with name 'train.hdf5'
+
+    :param df: DataFrame to be Saved
+    """
     final_path = os.path.join(get_data_path(), 'processed')
     if not os.path.exists(final_path):
         os.mkdir(final_path)
@@ -50,6 +58,14 @@ def get_data_path():
 
 
 def sex_to_int(df):
+    """
+    Converts 'Sex' string to int.
+
+    :param df: Input DF
+
+    :return: Transformed DF
+    :rtype: pandas DataFrame
+    """
     df['Sex'] = df['Sex'].replace({'male': 0, 'female': 1})
     return df
 
@@ -59,7 +75,9 @@ def add_title(df, merge_small_sample=True):
     Add Title to DataFrame (Mr., Miss., etc)
 
     :param df: Input Titanic DataFrame (with Name column)
+
     :return: df with ['Title'] column
+    :rtype: pandas DataFrame
     """
 
     # Creates 'names' pd.Series
@@ -80,6 +98,15 @@ def add_title(df, merge_small_sample=True):
 
 
 def merge_title_small_sample(df_line, small_sample_series):
+    """
+    Function to be used by DataFrame.apply(axis=1), that goes line by line checking if value for 'Title' column is part
+    of a list of values that has a small sample. This list is given by param 'small_sample_series'.
+
+    :param df_line: DataFrame Line
+    :param small_sample_series: Series that contains values that have low count.
+
+    :return: Title
+    """
     if df_line['Title'] in small_sample_series:
         return 'Other'
     else:
@@ -87,6 +114,14 @@ def merge_title_small_sample(df_line, small_sample_series):
 
 
 def one_hot_encoder_title(df):
+    """
+    Transform title columns in a  one hot encoder column.
+
+    :param df: Input DataFrame
+
+    :return: Transformed DataFrame
+    :rtype: pandas DataFrame
+    """
     encoder = LabelEncoder()
     title_cat = df["Title"]
     df['Title'] = encoder.fit_transform(title_cat)
@@ -106,80 +141,42 @@ def one_hot_encoder_title(df):
     return ndf"""
 
 
-def add_infant_status(df):
-    """
-        Add 'Male Infant' and 'Female Infant' categories
-
-        :param df: Input Titanic DataFrame (with Name column)
-        :return: df with [['Male Infant','Female Infant']]
-        """
-    if 'Survived' not in df.columns:
-        df['Male Infant'] = df['Age'] < 12
-        df['Female Infant'] = df['Age'] < 63
-        return df
-
-    # Get Maximum age to max out for loop
-    max_age = df['Age'].max()
-
-    # Get Survival rates by gender
-    male_survival_mean = df[df['Sex'] == 'male']['Survived'].mean()
-    female_survival_mean = df[df['Sex'] == 'female']['Survived'].mean()
-
-    # Instantiates variables
-    global_mean_male, global_mean_female, optimal_male_age, optimal_female_age = None, None, 0, 0
-
-    # Test all possible age divisions for infants to check out which is the threshold that is better than average
-    for age in range(0, int(max_age) + 1):
-
-        # Instantiates 'temp_df'
-        temp_df = df[df['Age'] < age]
-
-        # TODO checkout warning issued here
-        # Instantiates 'male_df'
-        male_df = temp_df[(temp_df['Sex'] == 'male') & (df['Age'] > optimal_male_age)]
-        male_count = male_df.count().max()
-
-        # Runs code only if sample is not zero
-        if male_count > 0:
-            infant_mean_male = male_df['Survived'].mean()
-
-            # If average for this age bracket is better, change optimal age
-            if infant_mean_male > male_survival_mean:
-                optimal_male_age = age
-
-        # Instantiates 'female_df'
-        female_df = temp_df[(temp_df['Sex'] == 'female') & (df['Age'] > optimal_female_age)]
-        female_count = female_df.count().max()
-
-        # Runs code only if sample is not zero
-        if female_count > 0:
-            infant_mean_female = female_df['Survived'].mean()
-
-            # If average for this age bracket is better, change optimal age
-            if infant_mean_female > female_survival_mean:
-                print(age, infant_mean_female)
-                optimal_female_age = age
-
-    # Sets new columns to df
-    df['Male Infant'] = df['Age'] < optimal_male_age
-    df['Female Infant'] = df['Age'] < optimal_female_age
-
-    # Returns df
-    return df
-
-
 def clean_df(df):
+    """
+    Cleans DataFrame
+
+    :param df: Input DataFrame
+
+    :return: Cleaned DataFrame
+    :rytpe: pandas DataFrame
+    """
+
+    # FillsNA if any (better to fill before with more robust functions)
+    # TODO make better fillNA functions
     df = df.fillna(df.mean())
+
+    # Remove String dtypes
     df = df.select_dtypes(exclude=['object'])
+
+    # Returns clean DF
     return df
+
 
 def routine(df):
-    df = add_infant_status(df)
+    """
+    Routine to transform DataFrames.
+
+    :param df: input
+
+    :return: Transformed DataFrame
+    :rtype: pandas DataFrame
+    """
     df = sex_to_int(df)
     df = add_title(df)
     df = one_hot_encoder_title(df)
     df = clean_df(df)
     return df
+
 
 if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -190,14 +187,16 @@ if __name__ == '__main__':
 
     # find .env automagically by walking up directories until it's found, then
     # load up the .env entries as environment variables
+
     # TODO understand 2 lines below
     # load_dotenv(find_dotenv())
     # main()
 
+    # Load DataFrame
     df = load_df()
 
+    # Transforms DataFrame
     df = routine(df)
 
+    # Saves Transformed (Processed) DataFrame to disk
     save_df(df)
-
-    print(df.dtypes)

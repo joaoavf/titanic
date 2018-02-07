@@ -96,14 +96,14 @@ def add_title(df, merge_small_sample=True):
     df['Title'] = proc_names.str.split(' ').str[0]
 
     if merge_small_sample:
-        small_sample_series = df['Title'].value_counts()[df['Title'].value_counts() < 3]
-        df['Title'] = df.apply(merge_title_small_sample, axis=1, args=(small_sample_series,))
+        valid_titles = ['Mr.', 'Miss.', 'Mrs.', 'Master.', 'Dr.', 'Rev.']
+        df['Title'] = df.apply(merge_title_small_sample, axis=1, args=(valid_titles,))
 
     # Returns df
     return df
 
 
-def merge_title_small_sample(df_line, small_sample_series):
+def merge_title_small_sample(df_line, valid_titles):
     """
     Function to be used by DataFrame.apply(axis=1), that goes line by line checking if value for 'Title' column is part
     of a list of values that has a small sample. This list is given by param 'small_sample_series'.
@@ -113,7 +113,7 @@ def merge_title_small_sample(df_line, small_sample_series):
 
     :return: Title
     """
-    if df_line['Title'] in small_sample_series:
+    if df_line['Title'] not in valid_titles:
         return 'Other'
     else:
         return df_line['Title']
@@ -128,22 +128,29 @@ def one_hot_encoder_title(df):
     :return: Transformed DataFrame
     :rtype: pandas DataFrame
     """
-    encoder = LabelEncoder()
-    title_cat = df["Title"]
-    title_cat_encoded = encoder.fit_transform(title_cat)
+    # Gets Title Category encoded
+    title_cat_encoded = pd.Categorical(df.Title, ['Mr.', 'Miss.', 'Mrs.', 'Master.', 'Dr.', 'Rev.', 'Other']).codes
 
-    print(title_cat_encoded)
-    # return df
-
+    # Instantiates OneHotEncoder
     onehotencoder = OneHotEncoder()
+
+    # TODO fix issue with mismatching categories between test and train, use modified version of test dataset
+    # Transform 1d np.array into 2d np.array
+    title_cat_encoded = np.array([title_cat_encoded])
+
+    # Gets OneHot np.array. '.fit_transform' outputs scipy sparse matrix, needs '.toarray' to get np.array
     title_cat_onehot = onehotencoder.fit_transform(title_cat_encoded.reshape(-1, 1)).toarray()
 
-    # TODO check if column names is right
+    # Creates OneHot DataFrame
     onehot_df = pd.DataFrame(title_cat_onehot, index=df.index, columns=df["Title"].value_counts().index)
 
+    # Drops Title columns
     df.drop(columns=['Title'], inplace=True)
+
+    # Concatenates DataFrames laterally
     ndf = pd.concat([df, onehot_df], axis=1)
 
+    # Returns Transformed DataFrame
     return ndf
 
 

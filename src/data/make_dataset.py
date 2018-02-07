@@ -30,7 +30,7 @@ if __name__ == '__main__':
     main()
 
 
-def add_title(df):
+def add_title(df, merge_small_sample=True):
     """
     Add Title to DataFrame (Mr., Miss., etc)
 
@@ -47,8 +47,19 @@ def add_title(df):
     # Sets ['Title'] by splitting 'proc_names' by ' ' and getting first value
     df['Title'] = proc_names.str.split(' ').str[0]
 
+    if merge_small_sample:
+        small_sample_series = df['Title'].value_counts()[df['Title'].value_counts() < 3]
+        df['Title'] = df.apply(merge_title_small_sample, axis=1, args=(small_sample_series,))
+
     # Returns df
     return df
+
+
+def merge_title_small_sample(df_line, small_sample_series):
+    if df_line['Title'] in small_sample_series:
+        return 'Other'
+    else:
+        return df_line['Title']
 
 
 def add_infant_status(df):

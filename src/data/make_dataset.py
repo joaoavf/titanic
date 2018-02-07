@@ -3,7 +3,8 @@ import os
 import click
 import logging
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
+import numpy as np
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 
 
 @click.command()
@@ -70,6 +71,11 @@ def sex_to_int(df):
     return df
 
 
+def embarked_to_int(df):
+    # TODO make embarked to int
+    pass
+
+
 def add_title(df, merge_small_sample=True):
     """
     Add Title to DataFrame (Mr., Miss., etc)
@@ -124,21 +130,21 @@ def one_hot_encoder_title(df):
     """
     encoder = LabelEncoder()
     title_cat = df["Title"]
-    df['Title'] = encoder.fit_transform(title_cat)
+    title_cat_encoded = encoder.fit_transform(title_cat)
 
-    return df
+    print(title_cat_encoded)
+    # return df
 
-    """
     onehotencoder = OneHotEncoder()
-    housing_cat_onehot = onehotencoder.fit_transform(title_cat_encoded.reshape(-1, 1))
+    title_cat_onehot = onehotencoder.fit_transform(title_cat_encoded.reshape(-1, 1)).toarray()
+
     # TODO check if column names is right
-    onehot_df = pd.DataFrame(housing_cat_onehot, index=df.index, columns=df["Title"].value_counts().index)
+    onehot_df = pd.DataFrame(title_cat_onehot, index=df.index, columns=df["Title"].value_counts().index)
 
-    df.drop(columns=['Title'])
-    ndf = pd.concat([df, onehot_df])
-    
+    df.drop(columns=['Title'], inplace=True)
+    ndf = pd.concat([df, onehot_df], axis=1)
 
-    return ndf"""
+    return ndf
 
 
 def clean_df(df):

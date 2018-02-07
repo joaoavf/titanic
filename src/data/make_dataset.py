@@ -72,8 +72,12 @@ def sex_to_int(df):
 
 
 def embarked_to_int(df):
-    # TODO make embarked to int
-    pass
+    df.Embarked.fillna('NaN')
+    embarked_encoded = pd.Categorical(df.Embarked, ['NaN', 'S', 'C', 'Q']).codes
+    embarked_df = pd.get_dummies(embarked_encoded)
+    embarked_df.columns = ['NaN', 'S', 'C', 'Q']
+    ndf = pd.concat([df, embarked_df], axis=1)
+    return ndf
 
 
 def add_title(df, merge_small_sample=True):
@@ -187,7 +191,11 @@ def routine(df):
     df = sex_to_int(df)
     df = add_title(df)
     df = one_hot_encoder_title(df)
+    df = embarked_to_int(df)
+
+    # Clean DF, remove object columns and FillNA
     df = clean_df(df)
+
     return df
 
 

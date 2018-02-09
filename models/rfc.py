@@ -4,7 +4,7 @@ from models.util import *
 import src.data.make_dataset as mkds
 
 
-def predict(df=get_processed_data(), results_column='Survived'):
+def predict(df=get_processed_train_set(), results_column='Survived'):
     """
     Instantiates a SVM model and saves predictions to disk.
 
@@ -19,7 +19,7 @@ def predict(df=get_processed_data(), results_column='Survived'):
     X = df.drop(columns=results_column)
 
     # Instantiates RFC
-    clf = RandomForestClassifier(n_jobs=-1, n_estimators=10000)
+    clf = RandomForestClassifier(n_jobs=-1, n_estimators=1000)
 
     # Fits model
     clf.fit(X, y)

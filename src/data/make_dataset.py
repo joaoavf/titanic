@@ -19,17 +19,17 @@ def main(input_filepath='x', output_filepath='y'):
     logger.info('making final data set from raw data')
 
 
-def load_df():
+def load_df(filename):
     """
     Loads train_df
     :return: Train DataFrame
     :rtype: pandas DataFrame
     """
-    final_path = os.path.join(get_data_path(), 'raw/train.csv')
+    final_path = os.path.join(get_data_path(), 'raw/' + filename)
     return pd.read_csv(final_path)
 
 
-def save_df(df):
+def save_df(df, filename):
     """
     Saves DataFrame in hdf5 with name 'train.hdf5'
 
@@ -39,7 +39,7 @@ def save_df(df):
     if not os.path.exists(final_path):
         os.mkdir(final_path)
 
-    final_path = os.path.join(final_path, 'train.hdf5')
+    final_path = os.path.join(final_path, filename)
 
     df.to_hdf(final_path, 'processed_data')
 
@@ -207,6 +207,26 @@ def cabin_first_letter(df):
     return ndf
 
 
+def has_cabin(df):
+    df['Has_Cabin'] = df["Cabin"].apply(lambda x: 0 if type(x) == float else 1)
+    return df
+
+
+def age_fillna(df):
+    age_avg = df['Age'].mean()
+    age_std = df['Age'].std()
+    age_null_count = df['Age'].isnull().sum()
+    age_null_random_list = np.random.randint(age_avg - age_std, age_avg + age_std, size=age_null_count)
+    df['Age'][np.isnan(df['Age'])] = age_null_random_list
+    df['Age'] = df['Age'].astype(int)
+    return df
+
+
+def cat_age(df):
+    df['CategoricalAge'] = pd.to_numeric(pd.cut(df['Age'], 5, labels=(0, 1, 2, 3, 4)))
+    return df
+
+
 def clean_df(df):
     """
     Cleans DataFrame
@@ -247,11 +267,25 @@ def routine(df):
     df = embarked_onehot(df)
     df = avg_fare(df)
     df = cabin_first_letter(df)
+    df = has_cabin(df)
+    df = age_fillna(df)
+    df = cat_age(df)
 
     # Clean DF, remove object columns and FillNA
     df = clean_df(df)
 
     return df
+
+
+def open_run_save(name):
+    # Load DataFrame
+    df = load_df(name + '.csv')
+
+    # Transforms DataFrame
+    df = routine(df)
+
+    # Saves Transformed (Processed) DataFrame to disk
+    save_df(df, name + '.hdf5')
 
 
 if __name__ == '__main__':
@@ -268,11 +302,5 @@ if __name__ == '__main__':
     # load_dotenv(find_dotenv())
     # main()
 
-    # Load DataFrame
-    df = load_df()
-
-    # Transforms DataFrame
-    df = routine(df)
-
-    # Saves Transformed (Processed) DataFrame to disk
-    save_df(df)
+    open_run_save('train')
+    open_run_save('test')

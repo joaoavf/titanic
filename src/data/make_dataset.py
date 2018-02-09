@@ -94,6 +94,11 @@ def embarked_onehot(df):
     return ndf
 
 
+def add_name_length(df):
+    df['name_len'] = df['Name'].str.len()
+    return df
+
+
 def add_title(df, merge_small_sample=True):
     """
     Add Title to DataFrame (Mr., Miss., etc)
@@ -172,6 +177,36 @@ def one_hot_encoder_title(df):
     return ndf
 
 
+def avg_fare(df):
+    df['avg_fare'] = df.groupby('Ticket')['Fare'].transform('mean')
+    return df
+
+
+def cabin_first_letter(df):
+    # Does basically the same thing as OneHotEncoder
+    cabin_df = pd.get_dummies(df['Cabin'].str[0], prefix='cabin_first_letter', dummy_na=True)
+    cabin_df['cabin_first_letter_other'] = 0
+
+    columns = ['cabin_first_letter_A', 'cabin_first_letter_B', 'cabin_first_letter_C', 'cabin_first_letter_D',
+               'cabin_first_letter_E', 'cabin_first_letter_F', 'cabin_first_letter_G', 'cabin_first_letter_T',
+               'cabin_first_letter_nan', 'cabin_first_letter_other']
+
+    # Code below harmonizes OneHotEncoder between train and test sets
+    for column in cabin_df.columns:
+        if column not in columns:
+            df['cabin_first_letter_other'] = df['cabin_first_letter_other'] + df[column]
+            df.drop(column=column)
+
+    for column in columns:
+        if column not in cabin_df.columns:
+            df['column'] = 0
+
+    # Merges DataFrames (OneHotEncoder and DataFrame being processed)
+    ndf = pd.concat([df, cabin_df], axis=1)
+
+    return ndf
+
+
 def clean_df(df):
     """
     Cleans DataFrame
@@ -179,7 +214,7 @@ def clean_df(df):
     :param df: Input DataFrame
 
     :return: Cleaned DataFrame
-    :rytpe: pandas DataFrame
+    :rtype: pandas DataFrame
     """
 
     # FillsNA if any (better to fill before with more robust functions)
@@ -206,9 +241,12 @@ def routine(df):
     :rtype: pandas DataFrame
     """
     df = sex_to_int(df)
+    df = add_name_length(df)
     df = add_title(df)
     df = one_hot_encoder_title(df)
     df = embarked_onehot(df)
+    df = avg_fare(df)
+    df = cabin_first_letter(df)
 
     # Clean DF, remove object columns and FillNA
     df = clean_df(df)

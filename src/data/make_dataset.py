@@ -4,6 +4,7 @@ import click
 import logging
 import pandas as pd
 import numpy as np
+from sklearn.decomposition import FactorAnalysis
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 
 
@@ -88,10 +89,14 @@ def embarked_onehot(df):
     embarked_df = pd.get_dummies(df.Embarked)
 
     # Merges DataFrames (OneHotEncoder and DataFrame being processed)
-    ndf = pd.concat([df, embarked_df], axis=1)
+    # ndf = pd.concat([df, embarked_df], axis=1)
+
+    fa = FactorAnalysis(n_components=1)
+    y = fa.fit_transform(embarked_df.values)
+    df['embarked_fa'] = y
 
     # Returns transformed DataFrame
-    return ndf
+    return df
 
 
 def add_name_length(df):
@@ -170,11 +175,14 @@ def one_hot_encoder_title(df):
     # Drops Title columns
     df.drop(columns=['Title'], inplace=True)
 
+    fa = FactorAnalysis(n_components=2)
+    y = fa.fit_transform(onehot_df.values)
+    df[['title_fa1', 'title_fa2']] = pd.DataFrame(y)
     # Concatenates DataFrames laterally
-    ndf = pd.concat([df, onehot_df], axis=1)
+    # ndf = pd.concat([df, onehot_df], axis=1)
 
     # Returns Transformed DataFrame
-    return ndf
+    return df
 
 
 def avg_fare(df):
@@ -194,17 +202,21 @@ def cabin_first_letter(df):
     # Code below harmonizes OneHotEncoder between train and test sets
     for column in cabin_df.columns:
         if column not in columns:
-            df['cabin_first_letter_other'] = df['cabin_first_letter_other'] + df[column]
-            df.drop(column=column)
+            cabin_df['cabin_first_letter_other'] = cabin_df['cabin_first_letter_other'] + cabin_df[column]
+            cabin_df.drop(column=column)
 
     for column in columns:
         if column not in cabin_df.columns:
-            df['column'] = 0
+            cabin_df['column'] = 0
+
+    fa = FactorAnalysis(n_components=1)
+    y = fa.fit_transform(cabin_df.values)
 
     # Merges DataFrames (OneHotEncoder and DataFrame being processed)
-    ndf = pd.concat([df, cabin_df], axis=1)
+    # ndf = pd.concat([df, cabin_df], axis=1)
+    df['cabin_fa'] = y
 
-    return ndf
+    return df
 
 
 def has_cabin(df):
@@ -224,6 +236,18 @@ def age_fillna(df):
 
 def cat_age(df):
     df['CategoricalAge'] = pd.to_numeric(pd.cut(df['Age'], 5, labels=(0, 1, 2, 3, 4)))
+    return df
+
+
+def sibsparch_fa(df):
+    sibsparch_df = df[['SibSp', 'Parch']]
+    fa = FactorAnalysis(n_components=1)
+    y = fa.fit_transform(sibsparch_df.values)
+
+    # Merges DataFrames (OneHotEncoder and DataFrame being processed)
+    # ndf = pd.concat([df, cabin_df], axis=1)
+    df['sibsparch_fa'] = y
+
     return df
 
 
@@ -270,6 +294,7 @@ def routine(df):
     df = has_cabin(df)
     df = age_fillna(df)
     df = cat_age(df)
+    df = sibsparch_fa(df)
 
     # Clean DF, remove object columns and FillNA
     df = clean_df(df)

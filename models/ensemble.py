@@ -6,6 +6,8 @@ from sklearn.svm import SVC
 from models.helper import SklearnHelper
 import numpy as np
 
+import xgboost as xgb
+
 from models.util import *
 
 train = get_processed_train_set()
@@ -120,22 +122,21 @@ base_predictions_train = pd.DataFrame(
 
 print(base_predictions_train.head())
 
-
-x_train = np.concatenate(( et_oof_train, rf_oof_train, ada_oof_train, gb_oof_train, svc_oof_train), axis=1)
-x_test = np.concatenate(( et_oof_test, rf_oof_test, ada_oof_test, gb_oof_test, svc_oof_test), axis=1)
+x_train = np.concatenate((et_oof_train, rf_oof_train, ada_oof_train, gb_oof_train, svc_oof_train), axis=1)
+x_test = np.concatenate((et_oof_test, rf_oof_test, ada_oof_test, gb_oof_test, svc_oof_test), axis=1)
 
 gbm = xgb.XGBClassifier(
-        #learning_rate = 0.02,
-     n_estimators= 2000,
-     max_depth= 4,
-     min_child_weight= 2,
-     #gamma=1,
-     gamma=0.9,
-     subsample=0.8,
-     colsample_bytree=0.8,
-     objective= 'binary:logistic',
-     nthread= -1,
-     scale_pos_weight=1).fit(x_train, y_train)
+    # learning_rate = 0.02,
+    n_estimators=2000,
+    max_depth=4,
+    min_child_weight=2,
+    # gamma=1,
+    gamma=0.9,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    objective='binary:logistic',
+    nthread=-1,
+    scale_pos_weight=1).fit(x_train, y_train)
 
 predictions = gbm.predict(x_test)
 # Set 'Survived' column
@@ -144,4 +145,4 @@ test['Survived'] = predictions
 # Creates output DataFrame
 test = test[['PassengerId', 'Survived']]
 
-test[['PassengerId', 'Survived']].to_csv('ensemble-predictions.csv')
+test[['PassengerId', 'Survived']].to_csv('ensemble-predictions.csv', index=False)

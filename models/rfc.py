@@ -19,7 +19,7 @@ def predict(df=get_processed_data(), results_column='Survived'):
     X = df.drop(columns=results_column)
 
     # Instantiates RFC
-    clf = RandomForestClassifier(n_estimators=1000)
+    clf = RandomForestClassifier(n_jobs=-1, n_estimators=10000)
 
     # Fits model
     clf.fit(X, y)

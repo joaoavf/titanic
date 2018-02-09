@@ -1,7 +1,7 @@
 from sklearn.cross_validation import KFold
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, AdaBoostClassifier, \
     GradientBoostingClassifier
-from sklearn.neighbors import NearestNeighbors
+from sklearn.neighbors import NearestNeighbors, KNeighborsClassifier
 from sklearn.svm import SVC
 
 from models.helper import SklearnHelper
@@ -82,16 +82,15 @@ svc_params = {
     'C': 0.025
 }
 
-knn_params = {
-    'n_neighbors': 3
-}
-
 rf = SklearnHelper(clf=RandomForestClassifier, params=rf_params)
 et = SklearnHelper(clf=ExtraTreesClassifier, params=et_params)
 ada = SklearnHelper(clf=AdaBoostClassifier, params=ada_params)
 gb = SklearnHelper(clf=GradientBoostingClassifier, params=gb_params)
 svc = SklearnHelper(clf=SVC, params=svc_params)
-knn = SklearnHelper(clf=NearestNeighbors, params=knn_params)
+knn3 = SklearnHelper(clf=KNeighborsClassifier, params={'n_neighbors': 3})
+knn5 = SklearnHelper(clf=KNeighborsClassifier, params={'n_neighbors': 5})
+knn8 = SklearnHelper(clf=KNeighborsClassifier, params={'n_neighbors': 8})
+knn13 = SklearnHelper(clf=KNeighborsClassifier, params={'n_neighbors': 13})
 
 # Create Numpy arrays of train, test and target ( Survived) dataframes to feed into our models
 y_train = train['Survived'].ravel()
@@ -105,34 +104,19 @@ rf_oof_train, rf_oof_test = get_oof(rf, x_train, y_train, x_test)  # Random Fore
 ada_oof_train, ada_oof_test = get_oof(ada, x_train, y_train, x_test)  # AdaBoost
 gb_oof_train, gb_oof_test = get_oof(gb, x_train, y_train, x_test)  # Gradient Boost
 svc_oof_train, svc_oof_test = get_oof(svc, x_train, y_train, x_test)  # Support Vector Classifier
-knn_oof_train, knn_oof_test = get_oof(knn, x_train, y_train, x_test)  # KNN
+knn3_oof_train, knn3_oof_test = get_oof(knn3, x_train, y_train, x_test)  # KNN3
+knn5_oof_train, knn5_oof_test = get_oof(knn5, x_train, y_train, x_test)  # KNN5
+knn8_oof_train, knn8_oof_test = get_oof(knn8, x_train, y_train, x_test)  # KNN8
+knn13_oof_train, knn13_oof_test = get_oof(knn13, x_train, y_train, x_test)  # KNN13
+
 print("Training is complete")
 
-rf_features = rf.feature_importances(x_train, y_train)
-et_features = et.feature_importances(x_train, y_train)
-ada_features = ada.feature_importances(x_train, y_train)
-gb_features = gb.feature_importances(x_train, y_train)
-svc_features = svc.feature_importances(x_train, y_train)
-knn_features = knn.feature_importances(x_train, y_train)
-
-cols = train.columns.values
-# Create a dataframe with features
-feature_dataframe = pd.DataFrame(
-    {'Random Forest feature importances': rf_features, 'Extra Trees  feature importances': et_features,
-     'AdaBoost feature importances': ada_features, 'Gradient Boost feature importances': gb_features,
-     'SVC feature importances': svc_features, 'KNN feature importances': knn_features}, index=cols)
-
-feature_dataframe['mean'] = feature_dataframe.mean(axis=1)
-
-base_predictions_train = pd.DataFrame(
-    {'RandomForest': rf_oof_train.ravel(), 'ExtraTrees': et_oof_train.ravel(), 'AdaBoost': ada_oof_train.ravel(),
-     'GradientBoost': gb_oof_train.ravel(), 'SVC': svc_oof_train.ravel(), 'KNN': knn_oof_train.ravel()})
-
-print(base_predictions_train.head())
-
-x_train = np.concatenate((et_oof_train, rf_oof_train, ada_oof_train, gb_oof_train, svc_oof_train, knn_oof_train),
+x_train = np.concatenate((et_oof_train, rf_oof_train, ada_oof_train, gb_oof_train, svc_oof_train, knn3_oof_train,
+                          knn5_oof_train, knn8_oof_train, knn13_oof_train),
                          axis=1)
-x_test = np.concatenate((et_oof_test, rf_oof_test, ada_oof_test, gb_oof_test, svc_oof_test, knn_oof_test), axis=1)
+x_test = np.concatenate(
+    (et_oof_test, rf_oof_test, ada_oof_test, gb_oof_test, svc_oof_test, knn3_oof_test, knn5_oof_test,
+     knn8_oof_test, knn13_oof_test), axis=1)
 
 gbm = xgb.XGBClassifier(
     # learning_rate = 0.02,

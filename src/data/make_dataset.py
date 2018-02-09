@@ -5,7 +5,7 @@ import logging
 import pandas as pd
 import numpy as np
 from sklearn.decomposition import FactorAnalysis
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder
 
 
 @click.command()
@@ -89,14 +89,14 @@ def embarked_onehot(df):
     embarked_df = pd.get_dummies(df.Embarked)
 
     # Merges DataFrames (OneHotEncoder and DataFrame being processed)
-    # ndf = pd.concat([df, embarked_df], axis=1)
+    ndf = pd.concat([df, embarked_df], axis=1)
 
     fa = FactorAnalysis(n_components=1)
     y = fa.fit_transform(embarked_df.values)
-    df['embarked_fa'] = y
+    ndf['embarked_fa'] = y
 
     # Returns transformed DataFrame
-    return df
+    return ndf
 
 
 def add_name_length(df):
@@ -175,14 +175,16 @@ def one_hot_encoder_title(df):
     # Drops Title columns
     df.drop(columns=['Title'], inplace=True)
 
+    # Concatenates DataFrames laterally
+    ndf = pd.concat([df, onehot_df], axis=1)
+
+    # Creates FactorAnalysis columns
     fa = FactorAnalysis(n_components=2)
     y = fa.fit_transform(onehot_df.values)
-    df[['title_fa1', 'title_fa2']] = pd.DataFrame(y)
-    # Concatenates DataFrames laterally
-    # ndf = pd.concat([df, onehot_df], axis=1)
+    ndf[['title_fa1', 'title_fa2']] = pd.DataFrame(y)
 
     # Returns Transformed DataFrame
-    return df
+    return ndf
 
 
 def avg_fare(df):
@@ -213,10 +215,10 @@ def cabin_first_letter(df):
     y = fa.fit_transform(cabin_df.values)
 
     # Merges DataFrames (OneHotEncoder and DataFrame being processed)
-    # ndf = pd.concat([df, cabin_df], axis=1)
-    df['cabin_fa'] = y
+    ndf = pd.concat([df, cabin_df], axis=1)
+    ndf['cabin_fa'] = y
 
-    return df
+    return ndf
 
 
 def has_cabin(df):
@@ -244,8 +246,6 @@ def sibsparch_fa(df):
     fa = FactorAnalysis(n_components=1)
     y = fa.fit_transform(sibsparch_df.values)
 
-    # Merges DataFrames (OneHotEncoder and DataFrame being processed)
-    # ndf = pd.concat([df, cabin_df], axis=1)
     df['sibsparch_fa'] = y
 
     return df

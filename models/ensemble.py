@@ -1,3 +1,6 @@
+# https://www.kaggle.com/arthurtok/introduction-to-ensembling-stacking-in-python
+
+
 from sklearn.cross_validation import KFold
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, AdaBoostClassifier, \
     GradientBoostingClassifier
@@ -43,43 +46,27 @@ def get_oof(clf, x_train, y_train, x_test):
 rf_params = {
     'n_jobs': -1,
     'n_estimators': 5000,
-    # 'warm_start': True,
-    # 'max_features': 0.2,
-    'max_depth': 6,
-    'min_samples_leaf': 2,
-    'max_features': 'sqrt',
-    'verbose': 0
 }
 
 # Extra Trees Parameters
 et_params = {
     'n_jobs': -1,
     'n_estimators': 5000,
-    # 'max_features': 0.5,
-    'max_depth': 8,
-    'min_samples_leaf': 2,
-    'verbose': 0
 }
 
 # AdaBoost parameters
 ada_params = {
-    'n_estimators': 5000,
-    'learning_rate': 0.75
+    'n_estimators': 50,
 }
 
 # Gradient Boosting parameters
 gb_params = {
     'n_estimators': 5000,
-    # 'max_features': 0.2,
-    'max_depth': 5,
-    'min_samples_leaf': 2,
-    'verbose': 0
 }
 
 # Support Vector Classifier parameters
 svc_params = {
     'kernel': 'linear',
-    'C': 0.025
 }
 
 rf = SklearnHelper(clf=RandomForestClassifier, params=rf_params)
@@ -118,18 +105,7 @@ x_test = np.concatenate(
     (et_oof_test, rf_oof_test, ada_oof_test, gb_oof_test, svc_oof_test, knn3_oof_test, knn5_oof_test,
      knn8_oof_test, knn13_oof_test), axis=1)
 
-gbm = xgb.XGBClassifier(
-    # learning_rate = 0.02,
-    n_estimators=2000,
-    max_depth=4,
-    min_child_weight=2,
-    # gamma=1,
-    gamma=0.9,
-    subsample=0.8,
-    colsample_bytree=0.8,
-    objective='binary:logistic',
-    nthread=-1,
-    scale_pos_weight=1).fit(x_train, y_train)
+gbm = xgb.XGBClassifier(n_estimators=25000, nthread=-1).fit(x_train, y_train)
 
 predictions = gbm.predict(x_test)
 # Set 'Survived' column
@@ -139,3 +115,7 @@ test['Survived'] = predictions
 test = test[['PassengerId', 'Survived']]
 
 test[['PassengerId', 'Survived']].to_csv('ensemble-predictions.csv', index=False)
+
+train_predictions = gbm.predict(x_train)
+survival = pd.Series(y_train == train_predictions)
+print(survival.mean())

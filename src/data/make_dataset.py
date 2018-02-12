@@ -241,6 +241,12 @@ def cat_age(df):
     return df
 
 
+def remove_age_na(df):
+    df['Age_na'] = np.where(df['Age'].isnull(), True, False)
+    df['Age'] = df['Age'].fillna(df['Age'].mean())
+    return df
+
+
 def sibsparch_fa(df):
     sibsparch_df = df[['SibSp', 'Parch']]
     fa = FactorAnalysis(n_components=1)
@@ -284,6 +290,7 @@ def routine(df):
     :return: Transformed DataFrame
     :rtype: pandas DataFrame
     """
+    df = remove_age_na(df)
     df = sex_to_int(df)
     df = add_name_length(df)
     df = add_title(df)

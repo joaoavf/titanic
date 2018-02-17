@@ -1,17 +1,14 @@
 # https://www.kaggle.com/arthurtok/introduction-to-ensembling-stacking-in-python
 
 
-from sklearn.cross_validation import KFold
+from sklearn.model_selection import KFold
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, AdaBoostClassifier, \
     GradientBoostingClassifier
-from sklearn.neighbors import NearestNeighbors, KNeighborsClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
-
 from models.helper import SklearnHelper
 import numpy as np
-
 import xgboost as xgb
-
 from models.util import *
 
 train = get_processed_train_set()
@@ -20,19 +17,19 @@ test = get_processed_test_set()
 ntrain = train.shape[0]
 ntest = test.shape[0]
 NFOLDS = 5  # set folds for out-of-fold prediction
-kf = KFold(ntrain, n_folds=NFOLDS)
-
+kf = KFold(n_splits=NFOLDS)
 
 def get_oof(clf, x_train, y_train, x_test):
     oof_train = np.zeros((ntrain,))
     oof_test = np.zeros((ntest,))
     oof_test_skf = np.empty((NFOLDS, ntest))
 
-    for i, (train_index, test_index) in enumerate(kf):
+    for i, (train_index, test_index) in enumerate(kf.split(train)):
         x_tr = x_train[train_index]
         y_tr = y_train[train_index]
         x_te = x_train[test_index]
 
+        print('i', i)
         clf.train(x_tr, y_tr)
 
         oof_train[test_index] = clf.predict(x_te)
@@ -43,32 +40,21 @@ def get_oof(clf, x_train, y_train, x_test):
 
 
 # Random Forest parameters
-rf_params = {
-    'n_jobs': -1,
-    'n_estimators': 5000,
-}
+rf_params = {'n_jobs': -1, 'n_estimators': 5000}
 
 # Extra Trees Parameters
-et_params = {
-    'n_jobs': -1,
-    'n_estimators': 5000,
-}
+et_params = {'n_jobs': -1, 'n_estimators': 5000}
 
 # AdaBoost parameters
-ada_params = {
-    'n_estimators': 50,
-}
+ada_params = {'n_estimators': 5000}
 
 # Gradient Boosting parameters
-gb_params = {
-    'n_estimators': 5000,
-}
+gb_params = {'n_estimators': 5000}
 
 # Support Vector Classifier parameters
-svc_params = {
-    'kernel': 'linear',
-}
+svc_params = {'kernel': 'linear'}
 
+# Initializes all models being used in phase 1
 rf = SklearnHelper(clf=RandomForestClassifier, params=rf_params)
 et = SklearnHelper(clf=ExtraTreesClassifier, params=et_params)
 ada = SklearnHelper(clf=AdaBoostClassifier, params=ada_params)
@@ -79,11 +65,15 @@ knn5 = SklearnHelper(clf=KNeighborsClassifier, params={'n_neighbors': 5})
 knn8 = SklearnHelper(clf=KNeighborsClassifier, params={'n_neighbors': 8})
 knn13 = SklearnHelper(clf=KNeighborsClassifier, params={'n_neighbors': 13})
 
-# Create Numpy arrays of train, test and target ( Survived) dataframes to feed into our models
+# Creates y train
 y_train = train['Survived'].ravel()
+
+# Detaches y from train data
 train = train.drop(['Survived'], axis=1)
-x_train = train.values  # Creates an array of the train data
-x_test = test.values  # Creats an array of the test data
+
+# Creates X train and X test
+x_train = train.values
+x_test = test.values
 
 # Create our OOF train and test predictions. These base results will be used as new features
 et_oof_train, et_oof_test = get_oof(et, x_train, y_train, x_test)  # Extra Trees

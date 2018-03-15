@@ -209,7 +209,7 @@ def cabin_first_letter(df):
 
     for column in columns:
         if column not in cabin_df.columns:
-            cabin_df['column'] = 0
+            cabin_df[column] = 0
 
     cabin_df = cabin_df[columns]
     fa = FactorAnalysis(n_components=1)
